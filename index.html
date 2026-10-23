@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HireSense AI – Resume Analyzer & Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root { --blue:#2563eb; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --bg:#f3f4f6; --green:#16a34a; --amber:#d97706; --red:#dc2626; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Poppins',system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-weight:700; font-size:26px; color:var(--blue); letter-spacing:.5px; }
+  .steps { display:flex; gap:20px; font-size:13px; color:var(--muted); }
+  .steps b { color:var(--blue); }
+  main { max-width:1100px; margin:0 auto; padding:32px 20px 60px; }
+  .view { display:none; } .view.on { display:block; }
+  .card { background:#fff; border-radius:16px; padding:28px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  h1 { font-size:30px; margin:0 0 6px; } h2 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 24px; }
+  label { display:block; font-weight:500; font-size:14px; margin:18px 0 6px; }
+  input[type=text], select { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font:inherit; background:#fff; }
+  .drop { border:2px dashed #c7d2fe; border-radius:14px; padding:34px 16px; text-align:center; cursor:pointer; background:#f8faff; color:var(--muted); }
+  .drop.drag, .drop:hover { border-color:var(--blue); background:#eef2ff; }
+  .drop strong { color:var(--blue); display:block; margin-bottom:4px; }
+  .drop input { display:none; }
+  button { font:inherit; font-weight:600; border:0; border-radius:10px; padding:13px 22px; cursor:pointer; }
+  button:focus-visible, .drop:focus-visible, input:focus-visible { outline:3px solid #93c5fd; outline-offset:2px; }
+  .primary { background:var(--blue); color:#fff; width:100%; margin-top:24px; }
+  .go { background:var(--green); color:#fff; }
+  .ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .danger { background:var(--red); color:#fff; }
+  button:disabled { opacity:.55; cursor:not-allowed; }
+  .err { color:var(--red); font-size:14px; margin-top:14px; min-height:20px; }
+  .narrow { max-width:560px; margin:0 auto; }
+  /* results */
+  .grid { display:grid; grid-template-columns:280px 1fr; gap:24px; align-items:start; }
+  @media (max-width:860px) { .grid { grid-template-columns:1fr; } }
+  .side { position:sticky; top:20px; text-align:center; }
+  .gauge { width:200px; margin:0 auto; position:relative; }
+  .gauge .num { position:absolute; left:0; right:0; bottom:6px; font-size:32px; font-weight:700; }
+  .cats { margin:22px 0; border-top:1px solid var(--line); text-align:left; }
+  .cat { display:flex; justify-content:space-between; padding:12px 6px; border-bottom:1px solid var(--line); cursor:pointer; font-weight:500; }
+  .cat:hover, .cat.active { color:var(--blue); }
+  .side button { width:100%; margin-top:10px; }
+  .panel { background:linear-gradient(#fef9c3,#fffdf0 60%); border-radius:16px; padding:28px; margin-bottom:20px; scroll-margin-top:20px; }
+  .panel.good { background:linear-gradient(#dcfce7,#f7fef9 60%); } .panel.mid { background:linear-gradient(#fef9c3,#fffdf0 60%); } .panel.bad { background:linear-gradient(#fee2e2,#fff8f8 60%); }
+  .ph { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .badge { min-width:44px; height:44px; border-radius:12px; color:#fff; display:grid; place-items:center; font-weight:700; }
+  .tip { display:flex; gap:12px; padding:12px 0; border-top:1px solid rgba(0,0,0,.06); }
+  .tip svg { flex:none; margin-top:3px; }
+  .tip p { margin:0; font-weight:500; } .tip small { display:block; color:var(--muted); margin-top:4px; line-height:1.5; font-size:13px; }
+  .cta { display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; }
+  /* interview */
+  #status { padding:14px; background:#f8faff; border:1px solid var(--line); border-radius:10px; min-height:48px; white-space:pre-wrap; }
+  #log { margin-top:14px; height:220px; overflow-y:auto; background:#f9fafb; border:1px solid var(--line); border-radius:10px; padding:12px; font-size:13px; color:var(--muted); }
+  .factor { display:flex; justify-content:space-between; margin-top:10px; font-weight:500; }
+  .bar { height:8px; background:var(--blue); border-radius:4px; margin-top:4px; }
+  .overall { font-size:22px; font-weight:700; color:var(--blue); margin-top:16px; }
+  .spin { display:inline-block; width:16px; height:16px; border:3px solid #fff; border-top-color:transparent; border-radius:50%; animation:s .8s linear infinite; vertical-align:-3px; margin-right:8px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce) { .spin { animation-duration:2s; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">HireSense AI</div>
+  <div class="steps"><span id="s1"><b>1 Analyze resume</b></span><span id="s2">2 Review feedback</span><span id="s3">3 Interview</span></div>
+</header>
+
+<main>
+  <!-- VIEW 1: upload -->
+  <section id="v-upload" class="view on">
+    <div class="card narrow">
+      <h1>Resume Analyzer</h1>
+      <p class="sub">Upload your resume and tell us the role you are aiming for.</p>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose resume PDF">
+        <strong id="dropTitle">Drop your resume here or click to browse</strong>
+        <span id="dropSub">PDF format</span>
+        <input type="file" id="file" accept="application/pdf,.pdf" />
+      </div>
+      <label for="role">Target role</label>
+      <input type="text" id="role" list="roles" placeholder="e.g. aiml, backend, data analyst" />
+      <datalist id="roles"><option value="aiml"><option value="backend"><option value="frontend"><option value="fullstack"><option value="data analyst"><option value="devops"></datalist>
+      <button class="primary" id="analyzeBtn">Analyze resume</button>
+      <div class="err" id="upErr" role="alert"></div>
+    </div>
+  </section>
+
+  <!-- VIEW 2: results -->
+  <section id="v-results" class="view">
+    <div class="grid">
+      <aside class="card side">
+        <div class="gauge">
+          <svg viewBox="0 0 200 110" width="200"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#f472b6"/></linearGradient></defs>
+            <path d="M15 100 A85 85 0 0 1 185 100" fill="none" stroke="#e5e7eb" stroke-width="16" stroke-linecap="round"/>
+            <path id="arc" d="M15 100 A85 85 0 0 1 185 100" fill="none" stroke="url(#g)" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="0 100"/></svg>
+          <div class="num" id="overall">–</div>
+        </div>
+        <div style="font-weight:600;margin-top:8px">Overall Score</div>
+        <div class="sub" style="margin:0;font-size:13px">Based on all categories</div>
+        <div class="cats" id="cats"></div>
+        <button class="ghost" id="newBtn">Upload new resume</button>
+        <button class="go" id="toInterview">Take the interview</button>
+      </aside>
+      <div>
+        <h1>Resume Analysis</h1>
+        <p class="sub" id="resSub">Detailed feedback and suggestions to improve your resume</p>
+        <div id="panels"></div>
+        <div class="cta"><button class="go" id="toInterview2">Continue to interview</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIEW 3: interview -->
+  <section id="v-interview" class="view">
+    <div class="card narrow" style="max-width:720px">
+      <h1>AI Interview</h1>
+      <p class="sub">Jiya will ask questions based on your resume. Find a quiet spot and allow microphone access.</p>
+      <div class="cta" style="margin:0 0 16px">
+        <button class="go" id="startBtn">Start interview</button>
+        <button class="danger" id="stopBtn" style="display:none">End call</button>
+        <button class="ghost" id="backBtn">Back to analysis</button>
+      </div>
+      <div id="status">Press "Start interview" when you are ready.</div>
+      <div id="log" aria-live="polite"></div>
+      <div id="scoreCard" style="display:none;margin-top:22px"><h2>Interview score</h2><div id="scoreContent"></div></div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import Vapi from "https://esm.sh/@vapi-ai/web";
+
+  // ── CONFIG ─────────────────────────────────────────────
+  const RESUME_API    = "http://ec2-65-2-137-116.ap-south-1.compute.amazonaws.com:8003";
+  const INTERVIEW_API = "https://minor-interview-woad.vercel.app";
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  const color = (n) => n >= 75 ? "var(--green)" : n >= 55 ? "var(--amber)" : "var(--red)";
+  const tone  = (n) => n >= 75 ? "good" : n >= 55 ? "mid" : "bad";
+
+  let analysis = null;   // the `data` object from /analyze-resume
+  let vapi = null;
+
+  function show(view) {
+    ["upload","results","interview"].forEach((v) => $("v-" + v).classList.toggle("on", v === view));
+    const step = { upload:1, results:2, interview:3 }[view];
+    [1,2,3].forEach((i) => { const el = $("s" + i); el.innerHTML = i === step ? `<b>${el.textContent.replace(/<[^>]*>/g,"")}</b>` : el.textContent; });
+    window.scrollTo({ top: 0 });
+  }
+
+  // ── STEP 1: upload + analyze ───────────────────────────
+  const drop = $("drop"), fileInput = $("file");
+  let chosen = null;
+  function setFile(f) {
+    if (!f) return;
+    if (!/\.pdf$/i.test(f.name)) { $("upErr").textContent = "Please choose a PDF file."; return; }
+    chosen = f; $("upErr").textContent = "";
+    $("dropTitle").textContent = f.name; $("dropSub").textContent = `${(f.size/1024).toFixed(0)} KB · click to change`;
+  }
+  drop.addEventListener("click", () => fileInput.click());
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+  fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+  ["dragover","dragenter"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+  ["dragleave","drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+  drop.addEventListener("drop", (e) => setFile(e.dataTransfer.files[0]));
+
+  $("analyzeBtn").addEventListener("click", async () => {
+    const role = $("role").value.trim();
+    if (!chosen) { $("upErr").textContent = "Choose your resume PDF first."; return; }
+    if (!role)   { $("upErr").textContent = "Enter the role you are aiming for."; return; }
+    const btn = $("analyzeBtn");
+    btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Analyzing… this can take up to a minute';
+    $("upErr").textContent = "";
+    try {
+      const fd = new FormData();
+      fd.append("file", chosen);
+      fd.append("target_role", role);
+      const res = await fetch(`${RESUME_API}/analyze-resume`, { method: "POST", body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.success === false) throw new Error(json.detail ? JSON.stringify(json.detail) : `HTTP ${res.status}`);
+      analysis = json.data ?? json;
+      renderResults(role);
+      show("results");
+    } catch (e) {
+      $("upErr").textContent = /Failed to fetch|NetworkError/i.test(e.message)
+        ? "Could not reach the analyzer. Check that the server is running and allows requests from this site (CORS / HTTPS)."
+        : `Analysis failed: ${e.message}`;
+    } finally {
+      btn.disabled = false; btn.textContent = "Analyze resume";
+    }
+  });
+
+  // ── STEP 2: render results ─────────────────────────────
+  const SECTIONS = [
+    ["ATS","ATS Score","How well does your resume pass through Applicant Tracking Systems?"],
+    ["toneAndStyle","Tone & Style","How does your resume read to a recruiter?"],
+    ["content","Content","How strong and specific is what you wrote?"],
+    ["structure","Structure","How easy is your resume to scan?"],
+    ["skills","Skills","How well do your skills match the role?"],
+  ];
+  const ICON = {
+    good:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>',
+    improve:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M12 3L2 21h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>',
+  };
+
+  function renderResults(role) {
+    const total = Math.round(analysis.overallScore ?? 0);
+    $("overall").textContent = `${total}/100`;
+    requestAnimationFrame(() => $("arc").setAttribute("stroke-dasharray", `${total} 100`));
+    $("resSub").textContent = `Detailed feedback for your ${role} resume`;
+
+    const present = SECTIONS.filter(([k]) => analysis[k]);
+    $("cats").innerHTML = present.map(([k,label]) => `<div class="cat" data-k="${k}"><span>${label}</span><span style="color:${color(analysis[k].score)}">${analysis[k].score}</span></div>`).join("");
+    $("cats").querySelectorAll(".cat").forEach((el) => el.addEventListener("click", () => $("p-" + el.dataset.k).scrollIntoView({ behavior: "smooth" })));
+
+    $("panels").innerHTML = present.map(([k,label,q]) => {
+      const sec = analysis[k];
+      const tips = (sec.tips || []).map((t) => `
+        <div class="tip">${ICON[t.type === "good" ? "good" : "improve"]}<div><p>${esc(t.tip)}</p>${t.explanation ? `<small>${esc(t.explanation)}</small>` : ""}</div></div>`).join("");
+      return `<div class="panel ${tone(sec.score)}" id="p-${k}">
+        <div class="ph"><div class="badge" style="background:${color(sec.score)}">${sec.score}</div><div><h2>${label} - ${sec.score}/100</h2><span class="sub" style="margin:0;font-size:13px">${q}</span></div></div>${tips}</div>`;
+    }).join("");
+  }
+
+  const goInterview = () => show("interview");
+  $("toInterview").addEventListener("click", goInterview);
+  $("toInterview2").addEventListener("click", goInterview);
+  $("newBtn").addEventListener("click", () => { analysis = null; chosen = null; fileInput.value = ""; $("dropTitle").textContent = "Drop your resume here or click to browse"; $("dropSub").textContent = "PDF format"; show("upload"); });
+  $("backBtn").addEventListener("click", () => { if (vapi) { try { vapi.stop(); } catch {} } show("results"); });
+
+  // ── STEP 3: interview ──────────────────────────────────
+  const transcriptLines = [];
+  let silenceTimer, closingTimer;
+
+  function log(msg) {
+    const d = document.createElement("div");
+    d.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    $("log").appendChild(d); $("log").scrollTop = $("log").scrollHeight;
+  }
+  function stopSilence() { clearTimeout(silenceTimer); clearTimeout(closingTimer); }
+  function resetSilence() {
+    stopSilence();
+    silenceTimer = setTimeout(() => {
+      if (!vapi) return;
+      log("15s silence — Jiya is checking in");
+      vapi.send({ type:"add-message", message:{ role:"system", content:"The candidate has been silent for 15 seconds. Gently ask if they are still there." } });
+      closingTimer = setTimeout(() => {
+        if (!vapi) return;
+        log("30s silence — closing the interview");
+        vapi.send({ type:"add-message", message:{ role:"system", content:"The candidate is still not responding. Wrap up the interview with a polite closing phrase and say goodbye." } });
+      }, 15000);
+    }, 15000);
+  }
+
+  function renderScore(score) {
+    const box = $("scoreContent");
+    $("scoreCard").style.display = "block";
+    if (score.error) { box.textContent = `Scoring failed: ${score.error}`; return; }
+    const factors = [["technical_knowledge","Technical Knowledge"],["communication_skills","Communication Skills"],["problem_solving","Problem Solving"],["system_design","System Design"],["confidence","Confidence"]];
+    box.innerHTML = factors.map(([k,l]) => {
+      const { score: s = 0, detail = "" } = score[k] || {};
+      return `<div class="factor"><span>${l}</span><span>${s}/10</span></div><div class="bar" style="width:${s*10}%"></div><div style="font-size:12px;color:var(--muted);margin:4px 0 8px">${esc(detail)}</div>`;
+    }).join("") + `<div class="overall">Overall: ${score.overall}/10</div><p class="sub" style="margin-top:8px">${esc(score.summary)}</p>`;
+  }
+
+  async function requestScore() {
+    const transcript = transcriptLines.join("\n");
+    if (!transcript.trim()) { log("No transcript to score."); $("status").textContent = "Call ended. No transcript was captured."; return; }
+    log("Scoring interview…");
+    try {
+      const res = await fetch(`${INTERVIEW_API}/api/interview/score`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ transcript }) });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || `HTTP ${res.status}`); }
+      renderScore(await res.json());
+      $("status").textContent = "Your score is ready.";
+    } catch (e) { log(`Score request failed: ${e.message}`); $("status").textContent = `Scoring failed: ${e.message}`; }
+  }
+
+  $("startBtn").addEventListener("click", async () => {
+    transcriptLines.length = 0; $("scoreCard").style.display = "none"; $("log").innerHTML = "";
+    $("status").textContent = "Setting up your interview…";
+    try {
+      const res = await fetch(`${INTERVIEW_API}/api/interview/start`, {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ resume_analysis: analysis, previous_qa: [] }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail ? JSON.stringify(e.detail) : `HTTP ${res.status}`); }
+      const data = await res.json();
+
+      vapi = new Vapi(data.vapi_public_key);
+      vapi.on("call-start", () => { $("status").textContent = "Call started. Jiya will speak first."; log("call-start"); resetSilence(); });
+      vapi.on("call-end", async () => {
+        stopSilence(); log("call-end");
+        $("stopBtn").style.display = "none"; $("startBtn").style.display = ""; $("backBtn").style.display = "";
+        $("status").textContent = "Call ended. Generating your score…";
+        await requestScore();
+      });
+      vapi.on("speech-start", () => { stopSilence(); log("Jiya speaking…"); });
+      vapi.on("speech-end", () => { resetSilence(); log("Jiya done speaking"); });
+      vapi.on("message", (m) => {
+        if (m.type === "transcript" && m.transcriptType === "final") {
+          const line = `${m.role === "assistant" ? "Jiya" : "You"}: ${m.transcript}`;
+          transcriptLines.push(line.replace(/^You:/, "Candidate:")); log(line);
+          if (m.role === "user") resetSilence();
+        }
+      });
+      vapi.on("error", (e) => { const msg = JSON.stringify(e, null, 2); $("status").textContent = `Error: ${msg}`; log(`error: ${msg}`); });
+
+      await vapi.start(data.assistant);
+      $("startBtn").style.display = "none"; $("backBtn").style.display = "none"; $("stopBtn").style.display = "";
+    } catch (e) { $("status").textContent = `Could not start: ${e.message}`; log(`error: ${e.message}`); }
+  });
+
+  $("stopBtn").addEventListener("click", () => { stopSilence(); vapi?.stop(); });
+</script>
+</body>
+</html>

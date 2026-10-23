@@ -179,7 +179,7 @@
       const fd = new FormData();
       fd.append("file", chosen);
       fd.append("target_role", role);
-      const res = await fetch(`${INTERVIEW_API}/analyze-resume`, { method: "POST", body: fd });
+      const res = await fetch(`${INTERVIEW_API}/api/resume/analyze`, { method: "POST", body: fd });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.success === false) throw new Error(json.detail ? JSON.stringify(json.detail) : `HTTP ${res.status}`);
       analysis = json.data ?? json;
